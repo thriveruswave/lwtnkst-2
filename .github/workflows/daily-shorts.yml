@@ -1,0 +1,141 @@
+name: Daily Auto Shorts with YouTube Upload
+
+on:
+  schedule:
+    # 5x/day: 3, 8, 13, 18, 23 UTC = 8:30 AM, 1:30 PM, 6:30 PM, 11:30 PM, 4:30 AM IST
+    - cron: "0 3,8,13,18,23 * * *"
+  workflow_dispatch:
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: Cache Vosk Model
+      uses: actions/cache@v3
+      with:
+        path: vosk-model-small-en-us-0.15
+        key: vosk-en-model-${{ runner.os }}
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install certifi
+        echo "SSL_CERT_FILE=$(python -m certifi)" >> $GITHUB_ENV
+
+    - name: Check and generate topics if needed
+      env:
+        POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+        PYTHONHTTPSVERIFY: "0"
+      run: |
+        python generate_topics.py
+
+    - name: Generate daily short video
+      env:
+        POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+        PYTHONHTTPSVERIFY: "0"
+      run: |
+        python main.py
+
+    - name: Verify and commit updated topics
+      run: |
+        echo "📊 Checking topic file changes..."
+        
+        echo "=== used_topics.txt content ==="
+        cat used_topics.txt || echo "File not found or empty"
+        
+        echo ""
+        echo "=== topics.txt (first 5 lines) ==="
+        head -n 5 topics.txt || echo "File not found or empty"
+        
+        echo ""
+        echo "=== Git status ==="
+        git status
+        
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        git add topics.txt used_topics.txt
+        
+        if git diff --staged --quiet; then
+          echo "⚠️ No changes to commit - topic files were not modified!"
+          echo "This might indicate an issue with topic rotation."
+          exit 1
+        else
+          echo "✅ Changes detected, committing..."
+          git commit -m "Update topics after daily video generation [skip ci]"
+          
+          echo "📤 Pushing to repository..."
+          git push
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Successfully pushed topic updates to repository"
+          else
+            echo "❌ Failed to push changes"
+            exit 1
+          fi
+        fi
+
+    - name: Upload to all platforms
+      env:
+        # YouTube
+        YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+        YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+        YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        # Instagram (optional)
+        INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+        # TikTok (optional)
+        TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+        # Facebook (optional)
+        FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+        FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        # Threads (optional)
+        THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        # Twitter/X (optional)
+        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+        # VK (optional)
+        VK_ACCESS_TOKEN: ${{ secrets.VK_ACCESS_TOKEN }}
+        VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
+        PYTHONHTTPSVERIFY: "0"
+      run: |
+        echo "🔍 Checking which credentials are loaded..."
+        echo "YouTube: $([ -n "$YT_CLIENT_ID" ] && echo "✅ SET" || echo "❌ NOT SET")"
+        echo "Facebook: $([ -n "$FB_ACCESS_TOKEN" ] && echo "✅ SET" || echo "❌ NOT SET")"
+        echo "Instagram: $([ -n "$INSTAGRAM_ACCESS_TOKEN" ] && echo "✅ SET" || echo "❌ NOT SET")"
+        echo "VK: $([ -n "$VK_ACCESS_TOKEN" ] && echo "✅ SET" || echo "❌ NOT SET")"
+        echo "Threads: $([ -n "$THREADS_ACCESS_TOKEN" ] && echo "✅ SET" || echo "❌ NOT SET")"
+        echo "Twitter: $([ -n "$TWITTER_API_KEY" ] && echo "✅ SET" || echo "❌ NOT SET")"
+        echo ""
+        echo "📤 Starting upload to all platforms..."
+        python upload_all_platforms.py
+
+    - name: Upload video artifact (backup)
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: final-video-${{ github.run_number }}
+        path: output/final_video.mp4
+        retention-days: 7
+
