@@ -4,3 +4,4 @@
 [MEDIEVAL] Medieval Guild Regulations
 [ANCIENT] Code of Hammurabi Eye for an Eye
 [MEDIEVAL] Magna Carta and the Birth of Rights
+[MEDIEVAL] Trial by Ordeal in Medieval Europe
