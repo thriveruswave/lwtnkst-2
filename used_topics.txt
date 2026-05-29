@@ -3,3 +3,4 @@
 [MEDIEVAL] Medieval Property Ownership
 [MEDIEVAL] Medieval Guild Regulations
 [ANCIENT] Code of Hammurabi Eye for an Eye
+[MEDIEVAL] Magna Carta and the Birth of Rights
