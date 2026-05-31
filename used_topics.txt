@@ -14,3 +14,4 @@
 [ANCIENT] Confucian Legal Philosophy in China
 [MEDIEVAL] Trial by Combat Legal Duels
 [ANCIENT] Sumerian Legal Codes and Contracts
+[MEDIEVAL] Magna Carta Habeas Corpus Origins
