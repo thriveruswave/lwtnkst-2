@@ -11,3 +11,4 @@
 [MEDIEVAL] Feudal System Legal Structure
 [ANCIENT] Mosaic Law Ten Commandments
 [MEDIEVAL] Canon Law in Medieval Church
+[ANCIENT] Confucian Legal Philosophy in China
