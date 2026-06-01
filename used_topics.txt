@@ -15,3 +15,4 @@
 [MEDIEVAL] Trial by Combat Legal Duels
 [ANCIENT] Sumerian Legal Codes and Contracts
 [MEDIEVAL] Magna Carta Habeas Corpus Origins
+[ANCIENT] Ancient Indian Manusmriti Laws
