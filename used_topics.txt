@@ -18,3 +18,4 @@
 [ANCIENT] Ancient Indian Manusmriti Laws
 [ANCIENT] Persian Empire Legal System
 [MEDIEVAL] Medieval Punishment Methods
+[ANCIENT] Athenian Democracy Legal Reforms
