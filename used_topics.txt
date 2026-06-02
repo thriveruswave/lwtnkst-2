@@ -21,3 +21,4 @@
 [ANCIENT] Athenian Democracy Legal Reforms
 [MEDIEVAL] English Common Law Development
 [ANCIENT] Babylonian Property Rights Laws
+[MEDIEVAL] Medieval Women's Legal Rights
