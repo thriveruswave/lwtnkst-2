@@ -22,3 +22,4 @@
 [MEDIEVAL] English Common Law Development
 [ANCIENT] Babylonian Property Rights Laws
 [MEDIEVAL] Medieval Women's Legal Rights
+[ANCIENT] Spartan Military Law Code
