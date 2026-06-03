@@ -24,3 +24,4 @@
 [MEDIEVAL] Medieval Women's Legal Rights
 [ANCIENT] Spartan Military Law Code
 [MEDIEVAL] Inquisition Legal Procedures
+[ANCIENT] Ancient Chinese Legalism Philosophy
