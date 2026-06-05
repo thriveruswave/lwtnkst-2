@@ -30,3 +30,4 @@
 [MEDIEVAL] Medieval Inheritance Laws
 [ANCIENT] Ancient Greek Maritime Law
 [MEDIEVAL] Medieval Tax Systems
+[ANCIENT] Roman Citizenship Legal Rights
