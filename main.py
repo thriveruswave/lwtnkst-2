@@ -4,6 +4,7 @@ import datetime
 import subprocess
 import random
 from pathlib import Path
+from urllib.parse import quote
 import requests
 import time
 from dotenv import load_dotenv
@@ -216,41 +217,41 @@ def generate_story_with_pollinations(topic: str) -> str:
                 raise
 
 def generate_scene_descriptions(story: str) -> list:
-    """Extract distinct scene descriptions from the story sentences."""
-    print(f"[scenes] Extracting {NUM_IMAGES} unique scene descriptions...")
-    
-    # Split story into sentences
+    """Enrich each story sentence with visual legal context so images match the content."""
+    print(f"[scenes] Extracting {NUM_IMAGES} visual scene descriptions...")
+
     sentences = re.split(r'[.!?]+\s*', story.strip())
     sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 10]
-    
-    # Create unique scenes from sentences
-    scenes = []
-    for i in range(NUM_IMAGES):
-        if i < len(sentences):
-            scene = sentences[i]
-        else:
-            # Cycle through sentences if we need more
-            scene = sentences[i % len(sentences)]
-        
-        # Make each scene description more visual
-        if i not in [j % len(sentences) for j in range(len(scenes))]:
-            scenes.append(scene)
-        else:
-            # Add variation for repeated scenes
-            variations = ["close-up view of", "wide shot of", "dramatic scene of", "peaceful moment of"]
-            scenes.append(f"{variations[i % len(variations)]} {scene}")
-    
-    # Ensure uniqueness by adding index
+
+    visual_enhancers = [
+        "detailed close-up view showing",
+        "wide dramatic scene illustrating",
+        "historical reenactment depicting",
+        "cinematic shot capturing the moment of",
+        "bird's eye view of the scene where",
+        "intimate close-up of the key figure involved in",
+        "grand wide shot of the historical event where",
+        "dramatic angle showing the tension of",
+        "detailed illustration of the practice of",
+        "atmospheric scene set during",
+        "portrait-style view of the central figure behind",
+        "action shot showing the execution of",
+        "solemn wide view of the ceremony of",
+        "candid historical moment capturing",
+        "dramatic reenactment showing the consequences of",
+    ]
+
     unique_scenes = []
-    for i, scene in enumerate(scenes[:NUM_IMAGES]):
-        unique_scenes.append(f"{scene}")
-    
-    # Save scenes
+    for i in range(NUM_IMAGES):
+        base = sentences[i % len(sentences)]
+        enhancer = visual_enhancers[i % len(visual_enhancers)]
+        unique_scenes.append(f"{enhancer} {base}")
+
     with open(SCENES_FILE, "w", encoding="utf-8") as f:
         for i, scene in enumerate(unique_scenes):
             f.write(f"{i+1}. {scene}\n")
-    
-    print(f"[scenes] Created {len(unique_scenes)} unique scenes")
+
+    print(f"[scenes] Created {len(unique_scenes)} visual scenes")
     return unique_scenes
 
 def generate_image(scene: str, idx: int) -> Path:
