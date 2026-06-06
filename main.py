@@ -404,15 +404,12 @@ def generate_image(scene: str, idx: int) -> Path:
     safe_prompt = quote(style_prompt)
     safe_negative = quote(negative_prompt)
     
-    # Use PAID API with Turbo model
     url = (
         f"https://gen.pollinations.ai/image/{safe_prompt}"
         f"?width={IMAGE_WIDTH}&height={IMAGE_HEIGHT}"
         f"&model={IMAGE_MODEL}"
         f"&seed={seed}"
         f"&nologo=true"
-        f"&nofeed=true"
-        f"&enhance=true"
         f"&negative_prompt={safe_negative}"
     )
     
@@ -425,36 +422,38 @@ def generate_image(scene: str, idx: int) -> Path:
     print(f"[image] 🎬 Generating VIRAL {topic_era.lower()} image {idx+1}/{NUM_IMAGES}...")
     print(f"[image] 📸 Scene: {scene[:70]}...")
     
-    # Robust retry logic
-    max_retries = 5
-    retry_delays = [5, 10, 15, 30, 60]
-    
+    # Retry with short delays (transient errors don't need long waits)
+    max_retries = 4
+    retry_delays = [2, 3, 5, 8]
+
     for attempt in range(max_retries):
         try:
-            r = requests.get(url, headers=headers, timeout=90)
+            r = requests.get(url, headers=headers, timeout=120)
             r.raise_for_status()
-            
-            # Validate image
+
             if len(r.content) < 1000:
                 raise ValueError("Image too small")
-            
-            # Save directly as the final image (no upscaling needed)
+
             out_upscaled.write_bytes(r.content)
             print(f"[image] ✅ Image {idx+1} ready! ({len(r.content)//1024}KB)")
-            
+
             time.sleep(2)
             return out_upscaled
-            
+
         except requests.exceptions.HTTPError as e:
             status_code = e.response.status_code if e.response else "Unknown"
-            if attempt < max_retries - 1:
+            if status_code == 429 and attempt < max_retries - 1:
+                wait_time = 30
+                print(f"[image] ⚠️ Rate limited! Retry {attempt+2}/{max_retries} in {wait_time}s...")
+                time.sleep(wait_time)
+            elif attempt < max_retries - 1:
                 wait_time = retry_delays[attempt]
                 print(f"[image] ⚠️ HTTP {status_code}! Retry {attempt+2}/{max_retries} in {wait_time}s...")
                 time.sleep(wait_time)
             else:
                 print(f"[image] ❌ Failed: HTTP {status_code}")
                 raise
-                
+
         except Exception as e:
             if attempt < max_retries - 1:
                 wait_time = retry_delays[attempt]
@@ -463,7 +462,7 @@ def generate_image(scene: str, idx: int) -> Path:
             else:
                 print(f"[image] ❌ Failed after {max_retries} attempts: {e}")
                 raise
-    
+
     raise Exception(f"Image {idx+1} generation failed")
 
 def generate_images(scenes: list):
