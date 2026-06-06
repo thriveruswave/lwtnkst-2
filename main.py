@@ -4,10 +4,8 @@ import datetime
 import subprocess
 import random
 from pathlib import Path
-from urllib.parse import quote
 import requests
 import time
-from generate_topics import check_and_update_topics
 from dotenv import load_dotenv
 from PIL import Image
 
@@ -136,15 +134,15 @@ def choose_topic_for_today():
     return selected_topic
 
 def generate_story_with_pollinations(topic: str) -> str:
-    """Generate a short English law explanation using Paid API."""
-    base_url = "https://gen.pollinations.ai/text/"
-    
-    # Determine the era of law
+    """Generate a short English law explanation using Paid API (POST chat completions)."""
     is_ancient = topic.startswith("[ANCIENT]")
     is_medieval = topic.startswith("[MEDIEVAL]")
     is_modern = topic.startswith("[MODERN]")
     clean_topic = topic.replace("[ANCIENT] ", "").replace("[MEDIEVAL] ", "").replace("[MODERN] ", "")
-    
+    # Truncate absurdly long topics (like JSON reasoning blobs)
+    if len(clean_topic) > 300:
+        clean_topic = clean_topic[:300]
+
     if is_ancient:
         system = (
             "You are a legal historian specializing in ancient laws. "
@@ -152,7 +150,6 @@ def generate_story_with_pollinations(topic: str) -> str:
             "Explain the ancient law clearly with historical context and interesting facts. "
             "Use engaging storytelling and vivid descriptions. No headings or titles."
         )
-        prompt = f"Topic: {clean_topic}. Explain this ancient law with historical context."
     elif is_medieval:
         system = (
             "You are a legal historian specializing in medieval laws. "
@@ -160,51 +157,63 @@ def generate_story_with_pollinations(topic: str) -> str:
             "Explain the medieval law with historical context and fascinating details. "
             "Use engaging storytelling and vivid descriptions. No headings or titles."
         )
-        prompt = f"Topic: {clean_topic}. Explain this medieval law with historical context."
-    else:  # Modern
+    else:
         system = (
             "You are a legal expert specializing in modern laws worldwide. "
             "Write a clear explanation in 30 seconds (80-130 words) in English. "
             "Explain the modern law with current context and practical implications. "
             "Use accessible language and real-world examples. No headings or titles."
         )
-        prompt = f"Topic: {clean_topic}. Explain this modern law with current context."
 
-    url = base_url + quote(prompt)
-    params = {
-        "model": "openai", 
-        "temperature": 1.0, 
-        "system": system
+    payload = {
+        "model": "openai",
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": f"Topic: {clean_topic}. Explain this law with historical context."}
+        ],
+        "temperature": 1.0,
+        "max_tokens": 300
     }
-    
+
     headers = {
-        "Authorization": f"Bearer {POLLINATIONS_API_KEY}"
+        "Authorization": f"Bearer {POLLINATIONS_API_KEY}",
+        "Content-Type": "application/json"
     }
 
-    print(f"[story] Generating English law content for: {clean_topic}")
-    
-    try:
-        r = requests.get(url, params=params, headers=headers, timeout=60)
-        r.raise_for_status()
-        text = r.text.strip()
-        
-        if not text:
-            raise ValueError("API returned empty text")
-            
-    except Exception as e:
-        print(f"[story] Failed to generate story: {e}")
-        # Fallback or re-raise
-        raise
+    print(f"[story] Generating English law content for: {clean_topic[:80]}...")
 
-    words = text.split()
-    if len(words) > STORY_MAX_WORDS:
-        text = " ".join(words[:STORY_MAX_WORDS])
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            r = requests.post(
+                "https://gen.pollinations.ai/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+            r.raise_for_status()
+            data = r.json()
+            text = data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
 
-    with open(STORY_FILE, "w", encoding="utf-8") as f:
-        f.write(text)
+            if not text:
+                raise ValueError("API returned empty text")
 
-    print(f"[story] Law content generated ({len(text.split())} words)")
-    return text
+            words = text.split()
+            if len(words) > STORY_MAX_WORDS:
+                text = " ".join(words[:STORY_MAX_WORDS])
+
+            with open(STORY_FILE, "w", encoding="utf-8") as f:
+                f.write(text)
+
+            print(f"[story] Law content generated ({len(text.split())} words)")
+            return text
+
+        except Exception as e:
+            print(f"[story] Attempt {attempt+1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(5)
+            else:
+                raise
 
 def generate_scene_descriptions(story: str) -> list:
     """Extract distinct scene descriptions from the story sentences."""
@@ -288,31 +297,46 @@ def generate_image(scene: str, idx: int) -> Path:
             f"National Geographic documentary style"
         )
     elif topic_era == 'MEDIEVAL':
+        scene_themes = [
+            (f"king on ornate throne in grand castle throne room, royal court gathered, nobles in velvet robes and crowns, massive stained glass window behind throne, stone pillars, tapestries, {scene}",
+             f"royal court session, king issuing decree, candlelit throne room, majestic"),
+            (f"village market square on market day, merchants selling goods at wooden stalls, peasants in wool tunics and linen, cobblestones, thatched roofs, town crier, {scene}",
+             f"medieval village life, bustling market, colorful produce and fabrics, sunny"),
+            (f"monks in a stone monastery scriptorium, copying illuminated manuscripts by candlelight, towering bookshelves, parchment and ink, arched windows, {scene}",
+             f"monastic library, quiet scholarly atmosphere, warm candle glow, peaceful"),
+            (f"knights in shining armor on horseback at a jousting tournament, colorful heraldic banners, wooden stands filled with cheering nobles, blue sky, {scene}",
+             f"medieval tournament, action scene, dust and excitement, bright outdoors"),
+            (f"gothic cathedral interior, towering arched ceilings, rainbow light through stained glass, priest in ornate vestments at altar, praying congregation, {scene}",
+             f"cathedral ceremony, sacred atmosphere, divine light through windows, awe-inspiring"),
+            (f"dungeon scene, torch-lit stone prison cell, iron bars, chains on walls, jailer in leather armor, prisoner in rough tunic, mysterious shadows, {scene}",
+             f"dark dungeon, secret meeting, atmospheric torchlight, tense mood"),
+            (f"grand medieval banquet hall, long wooden table filled with food and drink, nobles feasting, minstrels playing harp and lute, roaring fireplace, {scene}",
+             f"royal feast, lavish celebration, warm firelight, joyful merrymaking"),
+            (f"castle siege, trebuchets and battering rams attacking stone walls, soldiers with shields and swords, smoke and fire, banners flying, dramatic, {scene}",
+             f"battle scene, medieval warfare, chaos and action, epic scale"),
+            (f"medieval courtroom in a guild hall, magistrates in fur-trimmed robes at elevated bench, merchants and craftsmen presenting cases, wooden interior, {scene}",
+             f"guild court, legal proceeding, serious businessmen, formal atmosphere"),
+            (f"village church interior, stone walls, wooden pews, simple altar with candles, villagers in humble clothing gathered for prayer, peaceful, {scene}",
+             f"village church, quiet devotion, humble faithful, serene atmosphere"),
+            (f"scribe at work in a tower study, writing on parchment with quill, maps and charts on walls, astronomical instruments, single candle, cozy, {scene}",
+             f"medieval study, scholar at work, intellectual pursuit, warm solitary light"),
+            (f"castle courtyard, soldiers training with swords and shields, blacksmith at forge making armor, horses in stable, busy castle life, sunny day, {scene}",
+             f"castle daily life, training yard, active bustling, medieval routine"),
+            (f"winter scene, snow-covered castle and village, peasants in fur cloaks warming at bonfire, frozen river, bare trees, twilight sky with stars, {scene}",
+             f"medieval winter, cold atmosphere, snow and firelight, beautiful"),
+            (f"stone bridge over moat leading to castle gatehouse, travelers on horseback, merchant carts, drawbridge raised, flags on towers, countryside, {scene}",
+             f"castle entrance, travelers arriving, medieval landscape, scenic view"),
+            (f"royal bedchamber at dawn, canopy bed with rich curtains, noblewoman in velvet gown attended by maids, sunrise through arched window, intimate, {scene}",
+             f"royal chamber, morning ritual, elegant and intimate, soft morning light"),
+        ]
+        theme = scene_themes[idx % len(scene_themes)]
         style_prompt = (
-            # CRITICAL: SFW AND CLOTHING FIRST - ABSOLUTE PRIORITY
             f"SAFE FOR WORK, FULLY CLOTHED PEOPLE, "
-            f"everyone wearing complete period clothing, "
-            f"full armor and ceremonial robes covering entire body, "
-            f"modest medieval dress, NO NUDITY, "
-            f"professional family-friendly content, "
-            # Anatomy (with clothing)
-            f"professional photograph, correct human anatomy, "
-            f"beautiful faces with clear eyes nose mouth, "
-            f"normal hands with 5 fingers, proper proportions, "
-            f"realistic clothed people, "
-            # Scene content
-            f"{scene}, "
-            f"medieval European castle legal setting, "
-            f"knights and nobles in full traditional dress, "
-            f"detailed expressive faces, dignified poses, "
-            # Environment
-            f"gothic castle, stone halls, stained glass windows, "
-            # Lighting
-            f"dramatic lighting, torch light, candlelight, atmospheric, "
-            # Quality
-            f"photorealistic, ultra detailed, sharp focus, "
-            f"professional photography, 8k quality, "
-            f"Game of Thrones TV show style"
+            f"everyone in complete modest medieval period clothing, NO NUDITY, "
+            f"correct human anatomy, beautiful faces, proper proportions, realistic people, "
+            f"{theme[0]}, "
+            f"{theme[1]}, "
+            f"highly detailed photorealistic, sharp focus, 8k, cinematic quality"
         )
     else:  # MODERN
         style_prompt = (
