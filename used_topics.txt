@@ -48,3 +48,4 @@
 [ANCIENT] Egyptian Code of Textiles and Functionality in Law
 [ANCIENT] Limits of Parliamentary Power in Greek City-States
 [ANCIENT] Gender Roles within Ancient Athens Scattered Laws
+[ANCIENT] Legal Codex for Social Status Variables in Sparta
