@@ -142,3 +142,4 @@
 [MEDIEVAL] Magna Carta’s Enfranchise Clause: Heralding Parliamentary Rights
 [MEDIEVAL] The Feudal Baron's Charter: Obligations and Tenure in 13th Century England
 [MEDIEVAL] Trial by Ordeal: Dairy, Fire, and the Assurance of Divine Judgment
+[MEDIEVAL] Canon Law's Papal Decree: The Enforcement of Ecclesiastical Immunity
