@@ -156,3 +156,4 @@
 [MEDIEVAL] Leonardo da Vinci’s Laws of Geometry: Medieval Intellectual Property in the Renaissance
 [MEDIEVAL] Shogun’s Edicts on Land Tenure in 15th Century Japan
 [MEDIEVAL] Feudal Serfdom Laws: Rights and Restrictions in Late Middle Ages France
+[MEDIEVAL] Medieval Persian Merchant Laws: Safeguarding Commercial Contracts in Caravan Routes
