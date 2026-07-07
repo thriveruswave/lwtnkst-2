@@ -157,3 +157,4 @@
 [MEDIEVAL] Shogun’s Edicts on Land Tenure in 15th Century Japan
 [MEDIEVAL] Feudal Serfdom Laws: Rights and Restrictions in Late Middle Ages France
 [MEDIEVAL] Medieval Persian Merchant Laws: Safeguarding Commercial Contracts in Caravan Routes
+[MEDIEVAL] The Cistercian Monastic Decrees: Property Rights and Economic Self-Sufficiency
