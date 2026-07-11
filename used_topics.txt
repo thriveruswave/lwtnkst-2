@@ -169,3 +169,4 @@
 [MEDIEVAL] Trade Guild Ordinances of Florence: Monarchial Oversight in Commercial Commerce
 [MEDIEVAL] Byzantium’s Treasury Regulations: Control of State Finances in the 9th Century
 [MEDIEVAL] Oceanic Royal Law: Māori Laws on Land and Sacred Resources
+[MEDIEVAL] Sikh Code of Gurmukhi Law: Ordination and Judicial Procedures in 17th Century Punjab
