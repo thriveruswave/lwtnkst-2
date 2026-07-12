@@ -172,3 +172,4 @@
 [MEDIEVAL] Sikh Code of Gurmukhi Law: Ordination and Judicial Procedures in 17th Century Punjab
 [MEDIEVAL] Czech Bohemian Protections: Medieval Laws on Serf Labor and Horticulture
 [MEDIEVAL] Saharan Nomad Laws: Tribal Succession and Land Rights under Desert Winds
+[MEDIEVAL] The French Corps of Knight Banners: Legal Regulations of Military Service
