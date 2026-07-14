@@ -180,3 +180,4 @@
 [MEDIEVAL] The Crusader Kingdom’s Code: Crusading Law and Religious Zeal
 [MEDIEVAL] Saxon Three-Tiered Tax System: Revenue Collection in 10th Century England
 [MEDIEVAL] The Slavonic Church Law: Ecclesiastical Jurisdiction over Peasant Disputes
+[MEDIEVAL] Mongol Postal Law: Regulations for Communication among the Empire
