@@ -184,3 +184,4 @@
 [MEDIEVAL] Medieval Japanese Blood Code: Condemnation of Conflicts within Family Units
 [MEDIEVAL] The Andalusian Blend: Christian-Spanish Regulations on Mixed Communities
 [MEDIEVAL] The Russian Cossack Legal Codex: Truce, Settlement and Justice
+[MEDIEVAL] Byzantine Religious Sojourners: Legal Protections in Pilgrimage Paths
