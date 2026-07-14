@@ -181,3 +181,4 @@
 [MEDIEVAL] Saxon Three-Tiered Tax System: Revenue Collection in 10th Century England
 [MEDIEVAL] The Slavonic Church Law: Ecclesiastical Jurisdiction over Peasant Disputes
 [MEDIEVAL] Mongol Postal Law: Regulations for Communication among the Empire
+[MEDIEVAL] Medieval Japanese Blood Code: Condemnation of Conflicts within Family Units
