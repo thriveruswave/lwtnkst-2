@@ -187,3 +187,4 @@
 [MEDIEVAL] Byzantine Religious Sojourners: Legal Protections in Pilgrimage Paths
 [MEDIEVAL] Egyptian Water Rights: Medieval Law Governing Nile Floods
 [MEDIEVAL] Uruguayan Medieval Code: International Maritime Law of 15th Century Europe
+[MEDIEVAL] The Norman Southampton Charter: Maritime Enforcement for Shipbuilding
