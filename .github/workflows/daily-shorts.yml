@@ -83,6 +83,7 @@ jobs:
           git commit -m "Update topics after daily video generation [skip ci]"
           
           echo "📤 Pushing to repository..."
+          git pull --rebase
           git push
           
           if [ $? -eq 0 ]; then
