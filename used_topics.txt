@@ -188,3 +188,4 @@
 [MEDIEVAL] Egyptian Water Rights: Medieval Law Governing Nile Floods
 [MEDIEVAL] Uruguayan Medieval Code: International Maritime Law of 15th Century Europe
 [MEDIEVAL] The Norman Southampton Charter: Maritime Enforcement for Shipbuilding
+[MEDIEVAL] Medieval Laos: Tributary Law and Monarchy Relations in Southeast Asia
