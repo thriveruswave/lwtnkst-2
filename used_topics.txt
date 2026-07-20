@@ -211,3 +211,4 @@
 [MEDIEVAL] Mongol Yassa Code: Centralized Governance and Tribal Warfare Regulations
 [MEDIEVAL] Ottoman Empire’s Kanun: Civil Law Beneath Imperial Tactics
 [MEDIEVAL] African Kingdom of Kongo: Codified Rules Governing Succession Rights
+[MEDIEVAL] Samurai Bushido: Legal Codes Governing Warrior Ethics and Duty
