@@ -210,3 +210,4 @@
 [MEDIEVAL] Byzantine Law of 532: Codification Under The Justinian Code
 [MEDIEVAL] Mongol Yassa Code: Centralized Governance and Tribal Warfare Regulations
 [MEDIEVAL] Ottoman Empire’s Kanun: Civil Law Beneath Imperial Tactics
+[MEDIEVAL] African Kingdom of Kongo: Codified Rules Governing Succession Rights
