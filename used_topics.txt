@@ -218,3 +218,4 @@
 [MEDIEVAL] The Charter of the Knights Templar: Financial Regulations Across Controlling Realms
 [MEDIEVAL] Leonardo da Vinci’s Laws of Geometry: Medieval Intellectual Property in the Renaissance
 [MEDIEVAL] Shogun’s Edicts on Land Tenure in 15th Century Japan
+[MEDIEVAL] Feudal Serfdom Laws: Rights and Restrictions in Late Middle Ages France
