@@ -222,3 +222,4 @@
 [MEDIEVAL] Medieval Persian Merchant Laws: Safeguarding Commercial Contracts in Caravan Routes
 [MEDIEVAL] The Cistercian Monastic Decrees: Property Rights and Economic Self-Sufficiency
 [MEDIEVAL] Byzantine Citizenship Regulations: Legal Status of Empire Dwellers
+[MEDIEVAL] Mongol Siege Law: Regulation of Warfare Tactics and Siege Ethics
