@@ -59,7 +59,7 @@ def upload_to_facebook(video_path, description):
             data = {
                 'access_token': access_token,
                 'description': description[:500],  # Limit description length
-                'is_explicit_share': True
+                'published': True
             }
             
             print(f"[facebook] Sending request to Facebook API...")
