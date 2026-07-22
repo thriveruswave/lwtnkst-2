@@ -119,6 +119,8 @@ jobs:
         # VK (optional)
         VK_ACCESS_TOKEN: ${{ secrets.VK_ACCESS_TOKEN }}
         VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
+        # GitHub token with contents:write for Instagram video hosting
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PYTHONHTTPSVERIFY: "0"
       run: |
         echo "🔍 Checking which credentials are loaded..."

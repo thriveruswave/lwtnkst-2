@@ -1,11 +1,14 @@
 """
-Instagram Reels Upload - Using free file hosting + Instagram Graph API
+Instagram Reels Upload - Using GitHub raw URL + Instagram Graph API
+Uploads video to a temporary git branch, gets raw GitHub URL, then creates/publishes Instagram Reel.
 """
 
 import os
 import sys
 import requests
 import time
+import uuid
+import subprocess
 from pathlib import Path
 
 if sys.platform == 'win32':
@@ -13,44 +16,78 @@ if sys.platform == 'win32':
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
-HOSTING_TIMEOUT = (15, 180)
+
+def upload_video_to_github(file_path):
+    """
+    Upload video to a temporary git branch and return the raw GitHub URL.
+    Uses GITHUB_TOKEN from environment (set in workflow).
+    """
+    github_token = os.getenv('GITHUB_TOKEN')
+    if not github_token:
+        raise Exception("GITHUB_TOKEN not set in environment")
+
+    owner_repo = os.getenv('GITHUB_REPOSITORY', 'thriveruswave/lwtnkst-2')
+    run_id = os.getenv('GITHUB_RUN_ID', str(int(time.time())))
+    branch_name = f"ig-video-{run_id}-{uuid.uuid4().hex[:4]}"
+    video_filename = f"ig_{uuid.uuid4().hex[:8]}.mp4"
+
+    print(f"[instagram] Using GitHub RAW URL method")
+    print(f"[instagram] Repo: {owner_repo}, Branch: {branch_name}")
+
+    # Copy video to repo root
+    subprocess.run(['cp', str(file_path), video_filename], check=True, capture_output=True)
+    print(f"[instagram] Copied video to {video_filename}")
+
+    # Set up git remote with token auth
+    remote_url = f"https://x-access-token:{github_token}@github.com/{owner_repo}.git"
+    subprocess.run(['git', 'remote', 'set-url', 'origin', remote_url], check=True, capture_output=True)
+
+    # Create temp branch, add video, commit, push
+    subprocess.run(['git', 'checkout', '-b', branch_name], check=True, capture_output=True)
+    subprocess.run(['git', 'add', '-f', video_filename], check=True, capture_output=True)
+    subprocess.run(['git', 'commit', '-m', f'temp ig video {run_id}'], check=True, capture_output=True)
+    push_result = subprocess.run(
+        ['git', 'push', 'origin', branch_name],
+        capture_output=True, text=True, timeout=60
+    )
+    if push_result.returncode != 0:
+        raise Exception(f"Git push failed: {push_result.stderr[:200]}")
+
+    # Build raw download URL
+    raw_url = f"https://raw.githubusercontent.com/{owner_repo}/{branch_name}/{video_filename}"
+    print(f"[instagram] GitHub raw URL: {raw_url}")
+
+    return raw_url, branch_name, video_filename
+
+
+def cleanup_github_temp(branch_name, video_filename):
+    """Delete the temp branch and local video file."""
+    try:
+        # Checkout main first
+        subprocess.run(['git', 'checkout', 'main'], capture_output=True, timeout=30)
+        # Delete remote branch
+        subprocess.run(['git', 'push', 'origin', '--delete', branch_name], capture_output=True, timeout=30)
+        print(f"[instagram] Cleaned up branch: {branch_name}")
+    except Exception as e:
+        print(f"[instagram] Cleanup warning (branch): {e}")
+
+    try:
+        if os.path.exists(video_filename):
+            os.remove(video_filename)
+            print(f"[instagram] Cleaned up file: {video_filename}")
+    except Exception as e:
+        print(f"[instagram] Cleanup warning (file): {e}")
 
 
 def upload_video_to_hosting(file_path):
-    """Upload video to a public file hosting service. Tries multiple fallbacks."""
+    """Fallback: upload to third-party hosting. Tries multiple services."""
     last_error = None
-    file_size_mb = Path(file_path).stat().st_size / (1024 * 1024)
-    print(f"[instagram] Video size: {file_size_mb:.2f} MB")
 
-    # Method 1: catbox.moe (most reliable, direct download)
+    # uguu.se (worked previously)
     try:
-        print("[instagram] Trying catbox.moe...")
+        print("[instagram] Fallback: Trying uguu.se...")
         with open(file_path, 'rb') as f:
-            r = requests.post(
-                'https://catbox.moe/user/api.php',
-                data={'reqtype': 'fileupload'},
-                files={'fileToUpload': f},
-                timeout=180
-            )
-        if r.status_code == 200:
-            url = r.text.strip()
-            if url.startswith('https://'):
-                print(f"[instagram] catbox.moe success: {url}")
-                return url
-        print(f"[instagram] catbox.moe HTTP {r.status_code}: {r.text[:100]}")
-    except Exception as e:
-        print(f"[instagram] catbox.moe failed: {e}")
-        last_error = e
-
-    # Method 2: uguu.se (reliable direct download)
-    try:
-        print("[instagram] Trying uguu.se...")
-        with open(file_path, 'rb') as f:
-            r = requests.post(
-                'https://uguu.se/upload',
-                files={'files[]': f},
-                timeout=180
-            )
+            r = requests.post('https://uguu.se/upload', files={'files[]': f}, timeout=180)
         if r.status_code == 200:
             data = r.json()
             if data.get('files') and len(data['files']) > 0:
@@ -58,15 +95,13 @@ def upload_video_to_hosting(file_path):
                 if url:
                     print(f"[instagram] uguu.se success: {url}")
                     return url
-        print(f"[instagram] uguu.se HTTP {r.status_code}: {r.text[:100]}")
     except Exception as e:
         print(f"[instagram] uguu.se failed: {e}")
         last_error = e
 
-    # Method 3: 0x0.st (simple, direct download)
+    # 0x0.st
     try:
-        print("[instagram] Trying 0x0.st via curl...")
-        import subprocess
+        print("[instagram] Fallback: Trying 0x0.st...")
         result = subprocess.run(
             ['curl', '-s', '-F', f'file=@{file_path}', 'https://0x0.st'],
             capture_output=True, text=True, timeout=120
@@ -76,30 +111,11 @@ def upload_video_to_hosting(file_path):
             if url.startswith('https://'):
                 print(f"[instagram] 0x0.st success: {url}")
                 return url
-        print(f"[instagram] 0x0.st failed: {result.stderr[:200]}")
     except Exception as e:
         print(f"[instagram] 0x0.st failed: {e}")
         last_error = e
 
-    # Method 4: file.io (last resort)
-    try:
-        print("[instagram] Trying file.io...")
-        with open(file_path, 'rb') as f:
-            r = requests.post('https://file.io', files={'file': f}, timeout=120)
-        if r.status_code == 200:
-            data = r.json()
-            if data.get('success'):
-                url = data['link']
-                print(f"[instagram] file.io success: {url}")
-                return url
-            print(f"[instagram] file.io returned: {data}")
-        else:
-            print(f"[instagram] file.io HTTP {r.status_code}")
-    except Exception as e:
-        print(f"[instagram] file.io failed: {e}")
-        last_error = e
-
-    raise Exception(f"All hosting services failed. Last error: {last_error}")
+    raise Exception(f"All fallback hosting services failed. Last error: {last_error}")
 
 
 def upload_to_instagram(video_path, caption):
@@ -128,9 +144,12 @@ def upload_to_instagram(video_path, caption):
     caption_limited = caption[:2200] if len(caption) > 2200 else caption
     print(f"[instagram] Caption length: {len(caption_limited)} characters")
 
+    branch_name = None
+    video_filename = None
+
     try:
-        print("[instagram] Step 1: Uploading video to public hosting...")
-        video_url = upload_video_to_hosting(video_path)
+        print("[instagram] Step 1: Uploading video to GitHub for raw URL...")
+        video_url, branch_name, video_filename = upload_video_to_github(video_path)
         print(f"[instagram] Public video URL: {video_url}")
 
         print("[instagram] Step 2: Creating REELS container via Instagram Graph API...")
@@ -140,7 +159,7 @@ def upload_to_instagram(video_path, caption):
             'media_type': 'REELS',
             'video_url': video_url,
             'caption': caption_limited,
-            'share_to_feed': 'false',
+            'share_to_feed': False,
             'thumb_offset': '5000',
             'access_token': access_token
         }
@@ -150,7 +169,7 @@ def upload_to_instagram(video_path, caption):
 
         if container_response.status_code != 200:
             error_msg = container_response.json().get('error', {}).get('message', 'Unknown error')
-            print(f"[instagram] Container creation failed: {error_msg}")
+            print(f"[instagram] Container creation with Facebook endpoint failed: {error_msg}")
 
             print("[instagram] Retrying with graph.instagram.com endpoint...")
             container_url = f"https://graph.instagram.com/{api_version}/{user_id}/media"
@@ -216,7 +235,7 @@ def upload_to_instagram(video_path, caption):
 
         media_id = publish_response.json().get("id")
 
-        print("[instagram] SUCCESS! Video published to Instagram!")
+        print("[instagram] SUCCESS! Video published to Instagram Reels tab!")
         print(f"[instagram] Media ID: {media_id}")
         print("=" * 60)
 
@@ -228,12 +247,41 @@ def upload_to_instagram(video_path, caption):
 
     except Exception as e:
         print(f"[instagram] ERROR: {e}")
+
+        # If GitHub method failed, try third-party fallback
+        if "GITHUB_TOKEN" in str(e) or "GitHub" in str(e) or "git" in str(e):
+            print("[instagram] GitHub method failed, trying third-party fallback...")
+            try:
+                video_url = upload_video_to_hosting(video_path)
+                print(f"[instagram] Fallback URL: {video_url}")
+                # Retry with fallback URL
+                container_params['video_url'] = video_url
+                container_response = requests.post(container_url, params=container_params, timeout=60)
+                if container_response.status_code == 200:
+                    container_id = container_response.json().get('id')
+                    time.sleep(60)
+                    publish_response = requests.post(
+                        f"https://graph.facebook.com/v22.0/{user_id}/media_publish",
+                        params={"creation_id": container_id, "access_token": access_token},
+                        timeout=60
+                    )
+                    if publish_response.status_code == 200:
+                        media_id = publish_response.json().get("id")
+                        print(f"[instagram] Fallback SUCCESS! Media ID: {media_id}")
+                        return {'id': media_id, 'platform': 'instagram', 'status': 'success'}
+            except Exception as fallback_e:
+                print(f"[instagram] Fallback also failed: {fallback_e}")
+
         print("=" * 60)
         return {
             'platform': 'instagram',
             'status': 'failed',
             'error': str(e)
         }
+
+    finally:
+        if branch_name and video_filename:
+            cleanup_github_temp(branch_name, video_filename)
 
 
 if __name__ == '__main__':
