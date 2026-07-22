@@ -1,6 +1,5 @@
 """
-Instagram Reels Upload - Using temp hosting services for Public URL
-Uploads video via fallback chain of free hosts, then uses URL for Instagram API
+Instagram Reels Upload - Using free file hosting + Instagram Graph API
 """
 
 import os
@@ -14,68 +13,119 @@ if sys.platform == 'win32':
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
-REQ_TIMEOUT = (15, 120)
+HOSTING_TIMEOUT = (15, 180)
 
 
-    for name, upload_func in HOSTING_SERVICES:
-        try:
-            print(f"[instagram] Trying {name}...")
-            url = upload_func(file_path)
-            print(f"[instagram] Uploaded via {name}: {url}")
+def upload_video_to_hosting(file_path):
+    """Upload video to a free public file hosting service. Tries multiple fallbacks."""
+    last_error = None
+    file_size_mb = Path(file_path).stat().st_size / (1024 * 1024)
+    print(f"[instagram] Video size: {file_size_mb:.2f} MB")
+
+    # Method 1: file.io
+    try:
+        print("[instagram] Trying file.io...")
+        with open(file_path, 'rb') as f:
+            r = requests.post('https://file.io', files={'file': f}, timeout=120)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get('success'):
+                url = data['link']
+                print(f"[instagram] file.io success: {url}")
+                return url
+            else:
+                print(f"[instagram] file.io returned: {data}")
+        else:
+            print(f"[instagram] file.io HTTP {r.status_code}")
+    except Exception as e:
+        print(f"[instagram] file.io failed: {e}")
+        last_error = e
+
+    # Method 2: tmpfiles.org
+    try:
+        print("[instagram] Trying tmpfiles.org...")
+        with open(file_path, 'rb') as f:
+            r = requests.post('https://tmpfiles.org/api/v1/upload', files={'file': f}, timeout=120)
+        if r.status_code == 200:
+            data = r.json()
+            if data.get('data', {}).get('url'):
+                url = data['data']['url'].replace('tmpfiles.org/', 'tmpfiles.org/dl/')
+                print(f"[instagram] tmpfiles.org success: {url}")
+                return url
+        else:
+            print(f"[instagram] tmpfiles.org HTTP {r.status_code}")
+    except Exception as e:
+        print(f"[instagram] tmpfiles.org failed: {e}")
+        last_error = e
+
+    # Method 3: upload via curl to transfer.sh (often reliable)
+    try:
+        print("[instagram] Trying transfer.sh via curl...")
+        import subprocess
+        result = subprocess.run(
+            ['curl', '--upload-file', str(file_path), f'https://transfer.sh/{Path(file_path).name}'],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            url = result.stdout.strip()
+            if url.startswith('https://'):
+                print(f"[instagram] transfer.sh success: {url}")
+                return url
+        print(f"[instagram] transfer.sh failed: {result.stderr[:200]}")
+    except Exception as e:
+        print(f"[instagram] transfer.sh failed: {e}")
+        last_error = e
+
+    # Method 4: 0x0.st (free hosting)
+    try:
+        print("[instagram] Trying 0x0.st...")
+        with open(file_path, 'rb') as f:
+            r = requests.post('https://0x0.st', files={'file': f}, timeout=120)
+        if r.status_code == 200:
+            url = r.text.strip()
+            print(f"[instagram] 0x0.st success: {url}")
             return url
-        except Exception as e:
-            print(f"[instagram] {name} failed: {e}")
-            last_error = e
-            continue
+    except Exception as e:
+        print(f"[instagram] 0x0.st failed: {e}")
+        last_error = e
+
     raise Exception(f"All hosting services failed. Last error: {last_error}")
 
 
 def upload_to_instagram(video_path, caption):
     print("\n" + "=" * 60)
-    print("📸 INSTAGRAM UPLOAD STARTING")
+    print("INSTAGRAM UPLOAD STARTING")
     print("=" * 60)
 
     access_token = os.getenv('IG_ACCESS_TOKEN') or os.getenv('INSTAGRAM_ACCESS_TOKEN')
     user_id = os.getenv('IG_USER_ID') or os.getenv('INSTAGRAM_ACCOUNT_ID')
 
     if not access_token:
-        print("[instagram] Skipping - IG_ACCESS_TOKEN not set")
-        return {'status': 'skipped', 'reason': 'Missing credentials', 'platform': 'instagram'}
+        print("[instagram] Skipping - access token not set")
+        return {'status': 'skipped', 'reason': 'Missing token', 'platform': 'instagram'}
 
     if not user_id:
-        print("[instagram] Skipping - IG_USER_ID not set")
-        return {'status': 'skipped', 'reason': 'Missing credentials', 'platform': 'instagram'}
+        print("[instagram] Skipping - user ID not set")
+        return {'status': 'skipped', 'reason': 'Missing user ID', 'platform': 'instagram'}
 
-    print("[instagram] Credentials loaded")
     print(f"[instagram] User ID: {user_id}")
+    print(f"[instagram] Token: {access_token[:20]}...")
 
     video_path_obj = Path(video_path)
     if not video_path_obj.exists():
         raise FileNotFoundError(f"Video not found: {video_path}")
 
-    file_size_mb = video_path_obj.stat().st_size / (1024 * 1024)
-    print(f"[instagram] Video file: {video_path} ({file_size_mb:.2f} MB)")
-
     caption_limited = caption[:2200] if len(caption) > 2200 else caption
     print(f"[instagram] Caption length: {len(caption_limited)} characters")
 
     try:
-        print("[instagram] Step 1: Uploading to GitHub raw URL...")
-        import subprocess as _sp, uuid as _uuid, os as _os
-        _vid_name = "ig_" + _uuid.uuid4().hex[:8] + ".mp4"
-        _os.system("cp " + str(upload_path) + " " + _vid_name)
-        _os.system("git config --global user.email bot@bot.com")
-        _os.system("git config --global user.name Bot")
-        _os.system("git add -f " + _vid_name)
-        _os.system("git commit -m \"add " + _vid_name + "\"")
-        for _ in range(3):
-            _ret = _os.system("git push origin main")
-            if _ret == 0:
-                break
-            time.sleep(5)
-        video_url = "https://raw.githubusercontent.com/" + thriveruswave + "/" + lwtnkst-2 + "/main/" + _vid_name
-        print("[instagram] GitHub raw URL: " + video_url)
-        container_url = f"https://graph.facebook.com/v21.0/{user_id}/media"
+        print("[instagram] Step 1: Uploading video to public hosting...")
+        video_url = upload_video_to_hosting(video_path)
+        print(f"[instagram] Public video URL: {video_url}")
+
+        print("[instagram] Step 2: Creating REELS container via Instagram Graph API...")
+        api_version = "v22.0"
+        container_url = f"https://graph.facebook.com/{api_version}/{user_id}/media"
         container_params = {
             'media_type': 'REELS',
             'video_url': video_url,
@@ -86,14 +136,14 @@ def upload_to_instagram(video_path, caption):
         }
 
         container_response = requests.post(container_url, params=container_params, timeout=60)
+        print(f"[instagram] Container response: {container_response.status_code}")
 
         if container_response.status_code != 200:
-            error_data = container_response.json() if container_response.text else {}
-            error_msg = error_data.get('error', {}).get('message', 'Unknown error')
+            error_msg = container_response.json().get('error', {}).get('message', 'Unknown error')
             print(f"[instagram] Container creation failed: {error_msg}")
 
-            print("[instagram] Retrying with Instagram Graph API endpoint...")
-            container_url = f"https://graph.instagram.com/v21.0/{user_id}/media"
+            print("[instagram] Retrying with graph.instagram.com endpoint...")
+            container_url = f"https://graph.instagram.com/{api_version}/{user_id}/media"
             container_response = requests.post(container_url, params=container_params, timeout=60)
 
             if container_response.status_code != 200:
@@ -105,9 +155,8 @@ def upload_to_instagram(video_path, caption):
         print("[instagram] Step 3: Waiting 60 seconds for processing...")
         time.sleep(60)
 
-        # Step 4: Publish
-        print("[instagram] Step 4: Publishing...")
-        publish_url = f"https://graph.facebook.com/v21.0/{user_id}/media_publish"
+        print("[instagram] Step 4: Publishing container...")
+        publish_url = f"https://graph.facebook.com/{api_version}/{user_id}/media_publish"
         publish_params = {
             "creation_id": container_id,
             "access_token": access_token
@@ -138,10 +187,13 @@ def upload_to_instagram(video_path, caption):
         }
 
     except Exception as e:
-        print("[instagram] ERROR!")
-        print(f"[instagram] {str(e)}")
+        print(f"[instagram] ERROR: {e}")
         print("=" * 60)
-        raise
+        return {
+            'platform': 'instagram',
+            'status': 'failed',
+            'error': str(e)
+        }
 
 
 if __name__ == '__main__':
@@ -149,7 +201,7 @@ if __name__ == '__main__':
     if video_file.exists():
         try:
             result = upload_to_instagram(str(video_file), "Test upload")
-            print(f"\nSuccess! Result: {result}")
+            print(f"\nResult: {result}")
         except Exception as e:
             print(f"\nFailed: {e}")
     else:

@@ -14,17 +14,9 @@ Each platform requires its own API credentials.
 """
 
 import os
+import sys
 from pathlib import Path
 import re
-
-# Import platform-specific uploaders
-from upload_to_youtube import upload_to_youtube
-from upload_instagram import upload_to_instagram
-from upload_tiktok import upload_to_tiktok
-from upload_facebook import upload_to_facebook
-from upload_threads import upload_to_threads
-from upload_twitter import upload_to_twitter
-from upload_vk import upload_to_vk
 
 
 def generate_metadata_from_topic(topic: str, story: str):
@@ -133,6 +125,15 @@ def main():
     
     results = {}
     
+    # Define importer helper to lazily import platform modules
+    def import_uploader(module_name, func_name):
+        try:
+            mod = __import__(module_name, fromlist=[func_name])
+            return getattr(mod, func_name)
+        except Exception as e:
+            print(f"[{module_name}] Failed to import {func_name}: {e}")
+            return None
+
     # Upload to YouTube
     if all([
         os.getenv('YT_CLIENT_ID'),
@@ -143,9 +144,13 @@ def main():
         print("📺 Uploading to YouTube...")
         print("="*60)
         try:
-            result = upload_to_youtube(video_file, title, description, tags)
-            results['youtube'] = result
-            print(f"✅ YouTube: https://youtube.com/shorts/{result['id']}")
+            upload_to_youtube = import_uploader('upload_to_youtube', 'upload_to_youtube')
+            if upload_to_youtube:
+                result = upload_to_youtube(video_file, title, description, tags)
+                results['youtube'] = result
+                print(f"✅ YouTube: https://youtube.com/shorts/{result['id']}")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"❌ YouTube failed: {e}")
             results['youtube'] = None
@@ -161,9 +166,16 @@ def main():
         print("📸 Uploading to Instagram...")
         print("="*60)
         try:
-            result = upload_to_instagram(video_file, description)
-            results['instagram'] = result
-            print(f"✅ Instagram: Uploaded successfully")
+            upload_to_instagram = import_uploader('upload_instagram', 'upload_to_instagram')
+            if upload_to_instagram:
+                result = upload_to_instagram(video_file, description)
+                results['instagram'] = result
+                if result.get('status') == 'success':
+                    print(f"✅ Instagram: Uploaded successfully")
+                else:
+                    print(f"❌ Instagram: {result.get('error', 'Unknown error')}")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"❌ Instagram failed: {e}")
             results['instagram'] = None
@@ -176,9 +188,13 @@ def main():
         print("🎵 Uploading to TikTok...")
         print("="*60)
         try:
-            result = upload_to_tiktok(video_file, title, description)
-            results['tiktok'] = result
-            print(f"✅ TikTok: Uploaded successfully")
+            upload_to_tiktok = import_uploader('upload_tiktok', 'upload_to_tiktok')
+            if upload_to_tiktok:
+                result = upload_to_tiktok(video_file, title, description)
+                results['tiktok'] = result
+                print(f"✅ TikTok: Uploaded successfully")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"❌ TikTok failed: {e}")
             results['tiktok'] = None
@@ -194,9 +210,13 @@ def main():
         print("📘 Uploading to Facebook...")
         print("="*60)
         try:
-            result = upload_to_facebook(video_file, description)
-            results['facebook'] = result
-            print(f"✅ Facebook: Uploaded successfully")
+            upload_to_facebook = import_uploader('upload_facebook', 'upload_to_facebook')
+            if upload_to_facebook:
+                result = upload_to_facebook(video_file, description)
+                results['facebook'] = result
+                print(f"✅ Facebook: Uploaded successfully")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"❌ Facebook failed: {e}")
             results['facebook'] = None
@@ -212,9 +232,13 @@ def main():
         print("🧵 Uploading to Threads...")
         print("="*60)
         try:
-            result = upload_to_threads(video_file, description)
-            results['threads'] = result
-            print(f"✅ Threads: Uploaded successfully")
+            upload_to_threads = import_uploader('upload_threads', 'upload_to_threads')
+            if upload_to_threads:
+                result = upload_to_threads(video_file, description)
+                results['threads'] = result
+                print(f"✅ Threads: Uploaded successfully")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"❌ Threads failed: {e}")
             results['threads'] = None
@@ -241,18 +265,21 @@ def main():
         print(f"[twitter] ✅ All credentials present!")
         print(f"[twitter] 🚀 Starting upload...")
         try:
-            result = upload_to_twitter(video_file, description)
-            results['twitter'] = result
-            print(f"\n✅ Twitter: Upload successful!")
-            print(f"   Tweet ID: {result.get('id', 'N/A')}")
-            print(f"   URL: {result.get('url', 'N/A')}")
+            upload_to_twitter = import_uploader('upload_twitter', 'upload_to_twitter')
+            if upload_to_twitter:
+                result = upload_to_twitter(video_file, description)
+                results['twitter'] = result
+                print(f"\n✅ Twitter: Upload successful!")
+                print(f"   Tweet ID: {result.get('id', 'N/A')}")
+                print(f"   URL: {result.get('url', 'N/A')}")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"\n❌ Twitter upload FAILED!")
             print(f"   Error type: {type(e).__name__}")
             print(f"   Error message: {str(e)}")
             print(f"   Full error: {repr(e)}")
             
-            # Show troubleshooting tips
             print(f"\n🔍 Troubleshooting:")
             print(f"   - Check if Twitter credentials are correct in GitHub Secrets")
             print(f"   - Verify Twitter app has 'Read and Write' permissions")
@@ -282,9 +309,13 @@ def main():
         print("🇷🇺 Uploading to VK...")
         print("="*60)
         try:
-            result = upload_to_vk(video_file, description, title)
-            results['vk'] = result
-            print(f"✅ VK: {result.get('post_url', 'Uploaded successfully')}")
+            upload_to_vk = import_uploader('upload_vk', 'upload_to_vk')
+            if upload_to_vk:
+                result = upload_to_vk(video_file, description, title)
+                results['vk'] = result
+                print(f"✅ VK: {result.get('post_url', 'Uploaded successfully')}")
+            else:
+                raise Exception("Import failed")
         except Exception as e:
             print(f"❌ VK failed: {e}")
             results['vk'] = None
