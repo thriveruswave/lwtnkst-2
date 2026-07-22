@@ -227,3 +227,4 @@
 [MEDIEVAL] Medieval Moorish Laws: Construction of Jewish Quarter Codified Rules
 [MEDIEVAL] European Code of Chivalry: Legal Codex and Conflict Resolution
 [MEDIEVAL] Canonical Decrees on Indulgences: Medieval Monetary Transactions vs. Spiritual Pardon
+[MEDIEVAL] The Anglo-Norman Statute of the "Merchants of the Crown"
