@@ -225,3 +225,4 @@
 [MEDIEVAL] Mongol Siege Law: Regulation of Warfare Tactics and Siege Ethics
 [MEDIEVAL] Ottoman Caliphate's Family Law: Ecclesiastical Courts and Supervised Marriages
 [MEDIEVAL] Medieval Moorish Laws: Construction of Jewish Quarter Codified Rules
+[MEDIEVAL] European Code of Chivalry: Legal Codex and Conflict Resolution
