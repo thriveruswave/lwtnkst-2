@@ -17,12 +17,71 @@ HOSTING_TIMEOUT = (15, 180)
 
 
 def upload_video_to_hosting(file_path):
-    """Upload video to a free public file hosting service. Tries multiple fallbacks."""
+    """Upload video to a public file hosting service. Tries multiple fallbacks."""
     last_error = None
     file_size_mb = Path(file_path).stat().st_size / (1024 * 1024)
     print(f"[instagram] Video size: {file_size_mb:.2f} MB")
 
-    # Method 1: file.io
+    # Method 1: catbox.moe (most reliable, direct download)
+    try:
+        print("[instagram] Trying catbox.moe...")
+        with open(file_path, 'rb') as f:
+            r = requests.post(
+                'https://catbox.moe/user/api.php',
+                data={'reqtype': 'fileupload'},
+                files={'fileToUpload': f},
+                timeout=180
+            )
+        if r.status_code == 200:
+            url = r.text.strip()
+            if url.startswith('https://'):
+                print(f"[instagram] catbox.moe success: {url}")
+                return url
+        print(f"[instagram] catbox.moe HTTP {r.status_code}: {r.text[:100]}")
+    except Exception as e:
+        print(f"[instagram] catbox.moe failed: {e}")
+        last_error = e
+
+    # Method 2: uguu.se (reliable direct download)
+    try:
+        print("[instagram] Trying uguu.se...")
+        with open(file_path, 'rb') as f:
+            r = requests.post(
+                'https://uguu.se/upload',
+                files={'files[]': f},
+                timeout=180
+            )
+        if r.status_code == 200:
+            data = r.json()
+            if data.get('files') and len(data['files']) > 0:
+                url = data['files'][0].get('url', '')
+                if url:
+                    print(f"[instagram] uguu.se success: {url}")
+                    return url
+        print(f"[instagram] uguu.se HTTP {r.status_code}: {r.text[:100]}")
+    except Exception as e:
+        print(f"[instagram] uguu.se failed: {e}")
+        last_error = e
+
+    # Method 3: 0x0.st (simple, direct download)
+    try:
+        print("[instagram] Trying 0x0.st via curl...")
+        import subprocess
+        result = subprocess.run(
+            ['curl', '-s', '-F', f'file=@{file_path}', 'https://0x0.st'],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            url = result.stdout.strip()
+            if url.startswith('https://'):
+                print(f"[instagram] 0x0.st success: {url}")
+                return url
+        print(f"[instagram] 0x0.st failed: {result.stderr[:200]}")
+    except Exception as e:
+        print(f"[instagram] 0x0.st failed: {e}")
+        last_error = e
+
+    # Method 4: file.io (last resort)
     try:
         print("[instagram] Trying file.io...")
         with open(file_path, 'rb') as f:
@@ -33,60 +92,11 @@ def upload_video_to_hosting(file_path):
                 url = data['link']
                 print(f"[instagram] file.io success: {url}")
                 return url
-            else:
-                print(f"[instagram] file.io returned: {data}")
+            print(f"[instagram] file.io returned: {data}")
         else:
             print(f"[instagram] file.io HTTP {r.status_code}")
     except Exception as e:
         print(f"[instagram] file.io failed: {e}")
-        last_error = e
-
-    # Method 2: tmpfiles.org
-    try:
-        print("[instagram] Trying tmpfiles.org...")
-        with open(file_path, 'rb') as f:
-            r = requests.post('https://tmpfiles.org/api/v1/upload', files={'file': f}, timeout=120)
-        if r.status_code == 200:
-            data = r.json()
-            if data.get('data', {}).get('url'):
-                url = data['data']['url'].replace('tmpfiles.org/', 'tmpfiles.org/dl/')
-                print(f"[instagram] tmpfiles.org success: {url}")
-                return url
-        else:
-            print(f"[instagram] tmpfiles.org HTTP {r.status_code}")
-    except Exception as e:
-        print(f"[instagram] tmpfiles.org failed: {e}")
-        last_error = e
-
-    # Method 3: upload via curl to transfer.sh (often reliable)
-    try:
-        print("[instagram] Trying transfer.sh via curl...")
-        import subprocess
-        result = subprocess.run(
-            ['curl', '--upload-file', str(file_path), f'https://transfer.sh/{Path(file_path).name}'],
-            capture_output=True, text=True, timeout=120
-        )
-        if result.returncode == 0:
-            url = result.stdout.strip()
-            if url.startswith('https://'):
-                print(f"[instagram] transfer.sh success: {url}")
-                return url
-        print(f"[instagram] transfer.sh failed: {result.stderr[:200]}")
-    except Exception as e:
-        print(f"[instagram] transfer.sh failed: {e}")
-        last_error = e
-
-    # Method 4: 0x0.st (free hosting)
-    try:
-        print("[instagram] Trying 0x0.st...")
-        with open(file_path, 'rb') as f:
-            r = requests.post('https://0x0.st', files={'file': f}, timeout=120)
-        if r.status_code == 200:
-            url = r.text.strip()
-            print(f"[instagram] 0x0.st success: {url}")
-            return url
-    except Exception as e:
-        print(f"[instagram] 0x0.st failed: {e}")
         last_error = e
 
     raise Exception(f"All hosting services failed. Last error: {last_error}")
