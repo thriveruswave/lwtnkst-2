@@ -229,3 +229,4 @@
 [MEDIEVAL] Canonical Decrees on Indulgences: Medieval Monetary Transactions vs. Spiritual Pardon
 [MEDIEVAL] The Anglo-Norman Statute of the "Merchants of the Crown"
 [MEDIEVAL] Sharia Guardianship Law: Guardianship and Juvenile Rights in Medieval Muslim Society
+[MEDIEVAL] Trade Guild Ordinances of Florence: Monarchial Oversight in Commercial Commerce
