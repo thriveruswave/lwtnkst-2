@@ -234,3 +234,4 @@
 [MEDIEVAL] Oceanic Royal Law: Māori Laws on Land and Sacred Resources
 [MEDIEVAL] Sikh Code of Gurmukhi Law: Ordination and Judicial Procedures in 17th Century Punjab
 [MEDIEVAL] Czech Bohemian Protections: Medieval Laws on Serf Labor and Horticulture
+[MEDIEVAL] Saharan Nomad Laws: Tribal Succession and Land Rights under Desert Winds
