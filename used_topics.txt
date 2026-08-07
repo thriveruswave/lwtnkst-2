@@ -244,3 +244,4 @@
 [ANCIENT] Ancient Egyptian law and Ma'at
 [ANCIENT] Solon's reforms in ancient Athens
 [ANCIENT] Sumerian legal codes of Ur-Nammu
+[ANCIENT] The Laws of Lipit-Ishtar in Mesopotamia
