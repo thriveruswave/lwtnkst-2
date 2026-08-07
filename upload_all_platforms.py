@@ -1,6 +1,6 @@
 import os, sys, glob
-from upload.upload_instagram import upload_to_instagram
-from upload.upload_facebook import upload_to_facebook
+from upload_instagram import upload_to_instagram
+from upload_facebook import upload_to_facebook
 
 def main():
     print("Starting Multi-Platform Video Publisher...")
