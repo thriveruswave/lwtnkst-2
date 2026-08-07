@@ -13,7 +13,7 @@ from urllib.parse import quote
 from pathlib import Path
 
 def generate_new_topics(count=100, used_topics_set=None):
-    """Generate new law topics covering ancient and medieval laws from around the world."""
+    """Generate new law topics covering ancient laws from around the world."""
     
     if used_topics_set is None:
         used_topics_set = set()
@@ -32,7 +32,7 @@ def generate_new_topics(count=100, used_topics_set=None):
         # Generate ancient law topics
         ancient_system = (
             "You are a legal historian specializing in ancient laws. "
-            f"Create a list of {count//2 + 10} unique topics about ancient laws in English. "
+            f"Create a list of {count} unique topics about ancient laws in English. "
             "Each topic should be short (5-10 words), fascinating and educational. "
             "Topics should cover: Code of Hammurabi, Roman Law, Ancient Egyptian laws, "
             "Ancient Greek laws, Mosaic Law, Ancient Chinese laws, Babylonian laws, "
@@ -42,7 +42,7 @@ def generate_new_topics(count=100, used_topics_set=None):
             "Be creative and diverse. Output ONLY topics, one per line, no numbers or bullets."
         )
         
-        ancient_prompt = f"Create {count//2 + 10} unique ancient law topics from different civilizations"
+        ancient_prompt = f"Create {count} unique ancient law topics from different civilizations"
         ancient_url = base_url + quote(ancient_prompt)
         ancient_params = {"model": "openai", "temperature": 1.0, "system": ancient_system}
         
@@ -67,51 +67,10 @@ def generate_new_topics(count=100, used_topics_set=None):
             print(f"[topics] Error generating ancient topics: {e}")
             ancient_topics = []
         
-        # Generate medieval law topics
-        medieval_system = (
-            "You are a legal historian specializing in medieval laws. "
-            f"Create a list of {count//2 + 10} unique topics about medieval laws in English. "
-            "Each topic should be short (5-10 words), intriguing and informative. "
-            "Topics should cover: Magna Carta, feudal law, canon law, Islamic law (Sharia), "
-            "medieval European laws, trial by ordeal, medieval justice systems, "
-            "guild laws, medieval property rights, chivalric codes, medieval punishments, "
-            "Byzantine law, Mongol law, Ottoman law, medieval African kingdoms laws, "
-            "medieval Asian laws, Samurai code, medieval merchant laws. "
-            "Be creative and diverse. Output ONLY topics, one per line, no numbers or bullets."
-        )
-        
-        medieval_prompt = f"Create {count//2 + 10} unique medieval law topics from different regions"
-        medieval_url = base_url + quote(medieval_prompt)
-        medieval_params = {"model": "openai", "temperature": 1.0, "system": medieval_system}
-        
-        print(f"[topics] Generating medieval law topics...")
-        try:
-            r = requests.get(medieval_url, params=medieval_params, timeout=120)
-            r.raise_for_status()
-            
-            medieval_topics = []
-            for line in r.text.strip().split('\n'):
-                cleaned = line.strip()
-                for prefix in ['- ', '* ', '• ']:
-                    if cleaned.startswith(prefix):
-                        cleaned = cleaned[len(prefix):]
-                import re
-                cleaned = re.sub(r'^\d+[\.\:\)]\s*', '', cleaned)
-                if cleaned and len(cleaned) > 5:
-                    full_topic = f"[MEDIEVAL] {cleaned}"
-                    if full_topic not in used_topics_set:
-                        medieval_topics.append(full_topic)
-        except Exception as e:
-            print(f"[topics] Error generating medieval topics: {e}")
-            medieval_topics = []
-        
-        # Interleave ancient and medieval topics for variety
-        max_len = max(len(ancient_topics), len(medieval_topics))
-        for i in range(max_len):
-            if i < len(ancient_topics) and len(all_new_topics) < count:
-                all_new_topics.append(ancient_topics[i])
-            if i < len(medieval_topics) and len(all_new_topics) < count:
-                all_new_topics.append(medieval_topics[i])
+        # Add all ancient topics
+        for topic in ancient_topics:
+            if len(all_new_topics) < count:
+                all_new_topics.append(topic)
         
         print(f"[topics] Generated {len(all_new_topics)} unique topics so far...")
     

@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import datetime
 import subprocess
 import random
@@ -136,26 +137,16 @@ def choose_topic_for_today():
 
 def generate_story_with_pollinations(topic: str) -> str:
     """Generate a short English law explanation using Paid API (POST chat completions)."""
-    is_ancient = topic.startswith("[ANCIENT]")
-    is_medieval = topic.startswith("[MEDIEVAL]")
-    is_modern = topic.startswith("[MODERN]")
     clean_topic = topic.replace("[ANCIENT] ", "").replace("[MEDIEVAL] ", "").replace("[MODERN] ", "")
     # Truncate absurdly long topics (like JSON reasoning blobs)
     if len(clean_topic) > 300:
         clean_topic = clean_topic[:300]
 
-    if is_ancient:
+    if topic.startswith("[ANCIENT]"):
         system = (
             "You are a legal historian specializing in ancient laws. "
             "Write a fascinating explanation in 30 seconds (80-130 words) in English. "
             "Explain the ancient law clearly with historical context and interesting facts. "
-            "Use engaging storytelling and vivid descriptions. No headings or titles."
-        )
-    elif is_medieval:
-        system = (
-            "You are a legal historian specializing in medieval laws. "
-            "Write an intriguing explanation in 30 seconds (80-130 words) in English. "
-            "Explain the medieval law with historical context and fascinating details. "
             "Use engaging storytelling and vivid descriptions. No headings or titles."
         )
     else:
@@ -254,216 +245,74 @@ def generate_scene_descriptions(story: str) -> list:
     print(f"[scenes] Created {len(unique_scenes)} visual scenes")
     return unique_scenes
 
+def download_image_from_drive(idx: int) -> Path:
+    """Pick a random image from Google Drive folder (weighted by least-used)."""
+    import json, random
+    from pathlib import Path
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseDownload
+
+    service_key = os.environ.get("GOOGLE_SERVICE_ACCOUNT_KEY")
+    folder_id = os.environ.get("GOOGLE_DRIVE_FOLDER_ID")
+
+    if not service_key:
+        raise ValueError("GOOGLE_SERVICE_ACCOUNT_KEY environment variable required")
+    if not folder_id:
+        raise ValueError("GOOGLE_DRIVE_FOLDER_ID environment variable required")
+
+    cred = service_account.Credentials.from_service_account_info(
+        json.loads(service_key),
+        scopes=["https://www.googleapis.com/auth/drive.readonly"]
+    )
+    service = build("drive", "v3", credentials=cred)
+
+    results = service.files().list(
+        q=f"'{folder_id}' in parents and (mimeType='image/png' or mimeType='image/jpeg' or mimeType='image/jpg' or mimeType='image/webp')",
+        fields="files(id, name)",
+        pageSize=1000
+    ).execute()
+    files = results.get("files", [])
+
+    if not files:
+        raise ValueError("No images found in Google Drive folder")
+
+    used_log = Path("used_images.json")
+    if used_log.exists():
+        with open(used_log) as f:
+            usage = json.load(f)
+    else:
+        usage = {}
+
+    weights = []
+    for f in files:
+        count = usage.get(f["id"], 0)
+        weights.append(max(1, 10 - count))
+
+    chosen = random.choices(files, weights=weights, k=1)[0]
+    print(f"[image] Downloading {chosen['name']} from Drive...")
+
+    output_path = Path(f"images/scene_{idx:02d}.jpg")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    request = service.files().get_media(fileId=chosen["id"])
+    fh = open(output_path, "wb")
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+    fh.close()
+
+    usage[chosen["id"]] = usage.get(chosen["id"], 0) + 1
+    with open(used_log, "w") as f:
+        json.dump(usage, f)
+
+    print(f"[image] Downloaded: {chosen['name']}")
+    return output_path
+
 def generate_image(scene: str, idx: int) -> Path:
-    """Generate VIRAL-WORTHY, contextually relevant images using scene-specific prompts."""
-    
-    if not POLLINATIONS_API_KEY:
-        raise ValueError("POLLINATIONS_API_KEY not set! Get your API key from https://enter.pollinations.ai")
-    
-    # Create unique seed for each image
-    seed = hash(scene + str(idx)) % 1000000
-    
-    # Determine era
-    topic_era = getattr(generate_image, 'topic_era', 'MODERN')
-    
-    # VIRAL-OPTIMIZED PROMPTS: Scene-specific, attention-grabbing, contextually relevant
-    # Each prompt is tailored to the ACTUAL scene content for maximum engagement
-    
-    if topic_era == 'ANCIENT':
-        style_prompt = (
-            # CRITICAL: SFW AND CLOTHING FIRST - ABSOLUTE PRIORITY
-            f"SAFE FOR WORK, FULLY CLOTHED PEOPLE, "
-            f"everyone wearing complete period clothing, "
-            f"full robes and togas covering entire body, "
-            f"modest historical dress, NO NUDITY, "
-            f"professional family-friendly content, "
-            # Anatomy (with clothing)
-            f"professional photograph, correct human anatomy, "
-            f"beautiful faces with clear eyes nose mouth, "
-            f"normal hands with 5 fingers, proper proportions, "
-            f"realistic clothed people, "
-            # Scene content
-            f"{scene}, "
-            f"ancient Roman or Greek legal setting, "
-            f"judges and citizens in full traditional robes, "
-            f"detailed expressive faces, dignified poses, "
-            # Environment
-            f"magnificent ancient architecture, marble columns, "
-            f"stone temples, classical buildings, "
-            # Lighting
-            f"golden hour lighting, warm sunlight, cinematic, "
-            # Quality
-            f"photorealistic, ultra detailed, sharp focus, "
-            f"professional photography, 8k quality, "
-            f"National Geographic documentary style"
-        )
-    elif topic_era == 'MEDIEVAL':
-        scene_themes = [
-            (f"king on ornate throne in grand castle throne room, royal court gathered, nobles in velvet robes and crowns, massive stained glass window behind throne, stone pillars, tapestries, {scene}",
-             f"royal court session, king issuing decree, candlelit throne room, majestic"),
-            (f"village market square on market day, merchants selling goods at wooden stalls, peasants in wool tunics and linen, cobblestones, thatched roofs, town crier, {scene}",
-             f"medieval village life, bustling market, colorful produce and fabrics, sunny"),
-            (f"monks in a stone monastery scriptorium, copying illuminated manuscripts by candlelight, towering bookshelves, parchment and ink, arched windows, {scene}",
-             f"monastic library, quiet scholarly atmosphere, warm candle glow, peaceful"),
-            (f"knights in shining armor on horseback at a jousting tournament, colorful heraldic banners, wooden stands filled with cheering nobles, blue sky, {scene}",
-             f"medieval tournament, action scene, dust and excitement, bright outdoors"),
-            (f"gothic cathedral interior, towering arched ceilings, rainbow light through stained glass, priest in ornate vestments at altar, praying congregation, {scene}",
-             f"cathedral ceremony, sacred atmosphere, divine light through windows, awe-inspiring"),
-            (f"dungeon scene, torch-lit stone prison cell, iron bars, chains on walls, jailer in leather armor, prisoner in rough tunic, mysterious shadows, {scene}",
-             f"dark dungeon, secret meeting, atmospheric torchlight, tense mood"),
-            (f"grand medieval banquet hall, long wooden table filled with food and drink, nobles feasting, minstrels playing harp and lute, roaring fireplace, {scene}",
-             f"royal feast, lavish celebration, warm firelight, joyful merrymaking"),
-            (f"castle siege, trebuchets and battering rams attacking stone walls, soldiers with shields and swords, smoke and fire, banners flying, dramatic, {scene}",
-             f"battle scene, medieval warfare, chaos and action, epic scale"),
-            (f"medieval courtroom in a guild hall, magistrates in fur-trimmed robes at elevated bench, merchants and craftsmen presenting cases, wooden interior, {scene}",
-             f"guild court, legal proceeding, serious businessmen, formal atmosphere"),
-            (f"village church interior, stone walls, wooden pews, simple altar with candles, villagers in humble clothing gathered for prayer, peaceful, {scene}",
-             f"village church, quiet devotion, humble faithful, serene atmosphere"),
-            (f"scribe at work in a tower study, writing on parchment with quill, maps and charts on walls, astronomical instruments, single candle, cozy, {scene}",
-             f"medieval study, scholar at work, intellectual pursuit, warm solitary light"),
-            (f"castle courtyard, soldiers training with swords and shields, blacksmith at forge making armor, horses in stable, busy castle life, sunny day, {scene}",
-             f"castle daily life, training yard, active bustling, medieval routine"),
-            (f"winter scene, snow-covered castle and village, peasants in fur cloaks warming at bonfire, frozen river, bare trees, twilight sky with stars, {scene}",
-             f"medieval winter, cold atmosphere, snow and firelight, beautiful"),
-            (f"stone bridge over moat leading to castle gatehouse, travelers on horseback, merchant carts, drawbridge raised, flags on towers, countryside, {scene}",
-             f"castle entrance, travelers arriving, medieval landscape, scenic view"),
-            (f"royal bedchamber at dawn, canopy bed with rich curtains, noblewoman in velvet gown attended by maids, sunrise through arched window, intimate, {scene}",
-             f"royal chamber, morning ritual, elegant and intimate, soft morning light"),
-        ]
-        theme = scene_themes[idx % len(scene_themes)]
-        style_prompt = (
-            f"SAFE FOR WORK, FULLY CLOTHED PEOPLE, "
-            f"everyone in complete modest medieval period clothing, NO NUDITY, "
-            f"correct human anatomy, beautiful faces, proper proportions, realistic people, "
-            f"{theme[0]}, "
-            f"{theme[1]}, "
-            f"highly detailed photorealistic, sharp focus, 8k, cinematic quality"
-        )
-    else:  # MODERN
-        style_prompt = (
-            # CRITICAL: SFW AND CLOTHING FIRST - ABSOLUTE PRIORITY
-            f"SAFE FOR WORK, FULLY CLOTHED PEOPLE, "
-            f"everyone wearing complete business attire, "
-            f"full suits and professional clothing covering entire body, "
-            f"modest business dress, NO NUDITY, "
-            f"professional family-friendly content, "
-            # Anatomy (with clothing)
-            f"professional photograph, correct human anatomy, "
-            f"beautiful faces with clear eyes nose mouth, "
-            f"normal hands with 5 fingers, proper proportions, "
-            f"realistic clothed people, "
-            # Scene content
-            f"{scene}, "
-            f"modern professional legal setting, "
-            f"diverse lawyers and judges in full business suits, "
-            f"detailed expressive faces, professional poses, "
-            # Environment
-            f"contemporary courthouse, glass and marble, modern architecture, "
-            # Lighting
-            f"professional lighting, bright clean atmosphere, "
-            # Quality
-            f"photorealistic, ultra detailed, sharp focus, "
-            f"professional photography, 8k quality, "
-            f"corporate magazine style"
-        )
-    
-    # COMPREHENSIVE negative prompt - block ALL deformities AND NSFW
-    negative_prompt = (
-        # CRITICAL: NSFW blocking
-        "nude, nudity, naked, nsfw, exposed skin, bare chest, "
-        "bare body, undressed, topless, revealing, "
-        "inappropriate, adult content, sexual, "
-        # Face deformities
-        "deformed face, ugly face, distorted face, malformed face, "
-        "disfigured face, bad eyes, crossed eyes, missing eyes, extra eyes, "
-        "bad nose, missing nose, deformed mouth, bad teeth, "
-        "asymmetrical face, mutated face, "
-        # Body deformities
-        "deformed body, bad anatomy, wrong anatomy, extra limbs, "
-        "missing limbs, extra arms, extra legs, missing arms, missing legs, "
-        "bad hands, deformed hands, extra fingers, missing fingers, "
-        "fused fingers, mutated hands, poorly drawn hands, "
-        "bad feet, deformed feet, extra toes, missing toes, "
-        "malformed limbs, disfigured, mutation, mutated, "
-        "extra body parts, duplicate body parts, "
-        # Proportions
-        "bad proportions, long neck, long body, elongated, "
-        "stretched, distorted proportions, "
-        # Quality issues
-        "blurry, low quality, low resolution, pixelated, "
-        "grainy, jpeg artifacts, compression artifacts, "
-        # Style issues
-        "cartoon, anime, drawing, painting, illustration, "
-        "3d render, cgi, "
-        # Other
-        "watermark, text, signature, username, "
-        "cropped, cut off, out of frame"
-    )
-    
-    # Encode prompts
-    safe_prompt = quote(style_prompt)
-    safe_negative = quote(negative_prompt)
-    
-    url = (
-        f"https://gen.pollinations.ai/image/{safe_prompt}"
-        f"?width={IMAGE_WIDTH}&height={IMAGE_HEIGHT}"
-        f"&model={IMAGE_MODEL}"
-        f"&seed={seed}"
-        f"&nologo=true"
-        f"&negative_prompt={safe_negative}"
-    )
-    
-    headers = {
-        "Authorization": f"Bearer {POLLINATIONS_API_KEY}"
-    }
-
-    out = IMAGES_DIR / f"scene_{idx:02d}.jpg"
-    out_upscaled = IMAGES_DIR / f"scene_{idx:02d}_hd.jpg"
-    print(f"[image] 🎬 Generating VIRAL {topic_era.lower()} image {idx+1}/{NUM_IMAGES}...")
-    print(f"[image] 📸 Scene: {scene[:70]}...")
-    
-    # Retry with short delays (transient errors don't need long waits)
-    max_retries = 4
-    retry_delays = [2, 3, 5, 8]
-
-    for attempt in range(max_retries):
-        try:
-            r = requests.get(url, headers=headers, timeout=120)
-            r.raise_for_status()
-
-            if len(r.content) < 1000:
-                raise ValueError("Image too small")
-
-            out_upscaled.write_bytes(r.content)
-            print(f"[image] ✅ Image {idx+1} ready! ({len(r.content)//1024}KB)")
-
-            time.sleep(2)
-            return out_upscaled
-
-        except requests.exceptions.HTTPError as e:
-            status_code = e.response.status_code if e.response else "Unknown"
-            if status_code == 429 and attempt < max_retries - 1:
-                wait_time = 30
-                print(f"[image] ⚠️ Rate limited! Retry {attempt+2}/{max_retries} in {wait_time}s...")
-                time.sleep(wait_time)
-            elif attempt < max_retries - 1:
-                wait_time = retry_delays[attempt]
-                print(f"[image] ⚠️ HTTP {status_code}! Retry {attempt+2}/{max_retries} in {wait_time}s...")
-                time.sleep(wait_time)
-            else:
-                print(f"[image] ❌ Failed: HTTP {status_code}")
-                raise
-
-        except Exception as e:
-            if attempt < max_retries - 1:
-                wait_time = retry_delays[attempt]
-                print(f"[image] ⚠️ Error: {str(e)[:50]}. Retry {attempt+2}/{max_retries} in {wait_time}s...")
-                time.sleep(wait_time)
-            else:
-                print(f"[image] ❌ Failed after {max_retries} attempts: {e}")
-                raise
-
-    raise Exception(f"Image {idx+1} generation failed")
+    """Download image from Google Drive instead of AI generation."""
+    return download_image_from_drive(idx)
 
 def generate_images(scenes: list):
     """Generate unique images for each scene SEQUENTIALLY (avoids rate limits)"""
@@ -746,11 +595,8 @@ def main():
     topic_file = OUTPUT_DIR / "topic.txt"
     topic_file.write_text(topic, encoding='utf-8')
     
-    # Extract era from topic for image styling
     if topic.startswith("[ANCIENT]"):
         topic_era = "ANCIENT"
-    elif topic.startswith("[MEDIEVAL]"):
-        topic_era = "MEDIEVAL"
     else:
         topic_era = "MODERN"
     
