@@ -241,3 +241,4 @@
 ﻿[ANCIENT] Code of Hammurabi - justice in Babylon
 [ANCIENT] Roman Law - Twelve Tables of Rome
 [ANCIENT] Draco's Laws - harsh justice in Athens
+[ANCIENT] Ancient Egyptian law and Ma'at
