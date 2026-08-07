@@ -129,18 +129,18 @@ def main():
 
 {story_text}
 
-#Shorts #Law #LegalHistory #History #Education #AncientLaw #MedievalLaw #Justice"""
+#Shorts #Law #LegalHistory #History #Education #AncientLaw #Justice"""
     else:
         description = (
-            "Discover fascinating legal history and laws from around the world! "
-            "Learn about ancient codes, medieval justice, and modern legal systems.\n\n"
-            "#Shorts #Law #LegalHistory #History #Education #AncientLaw #MedievalLaw #Justice"
+            "Discover fascinating ancient legal history and laws from around the world! "
+            "Learn about ancient codes and early justice systems.\n\n"
+            "#Shorts #Law #LegalHistory #History #Education #AncientLaw #Justice"
         )
     
     tags = [
         'Law', 'Legal History', 'History', 'Education', 'Legal System',
-        'Shorts', 'Justice', 'Court', 'Ancient Law', 'Medieval Law',
-        'World History', 'Legal Education', 'Historical Facts'
+        'Shorts', 'Justice', 'Court', 'Ancient Law',
+        'World History', 'Legal Education', 'Historical Facts', 'Ancient History'
     ]
     
     # Upload
