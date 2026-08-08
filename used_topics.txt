@@ -247,3 +247,4 @@
 [ANCIENT] The Laws of Lipit-Ishtar in Mesopotamia
 [ANCIENT] Mosaic Law - Ten Commandments
 [ANCIENT] Ancient Chinese law of the Zhou dynasty
+[ANCIENT] Manusmriti - ancient Indian law
