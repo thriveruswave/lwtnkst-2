@@ -254,3 +254,4 @@
 [ANCIENT] The Laws of Gortyn in ancient Crete
 [ANCIENT] Hittite law codes of Anatolia
 [ANCIENT] Ancient Japanese law under the Yamato state
+[ANCIENT] Vedic legal traditions of ancient India
