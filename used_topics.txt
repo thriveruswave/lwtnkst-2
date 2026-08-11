@@ -261,3 +261,4 @@
 [ANCIENT] Ancient Greek maritime law
 [ANCIENT] The Code of Esnunna in ancient Babylon
 [ANCIENT] Ancient Korean law of the Gojoseon period
+[ANCIENT] Assyrian legal tablets and punishments
