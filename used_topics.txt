@@ -266,3 +266,4 @@
 [ANCIENT] Theft and punishment in ancient Babylon
 [ANCIENT] Ancient Roman contracts and property law
 [ANCIENT] Divorce laws in ancient Egypt
+[ANCIENT] Ancient Greek inheritance law
