@@ -276,3 +276,4 @@
 [ANCIENT] Maya tribute and taxation laws
 [ANCIENT] Ancient Greek citizenship laws
 [ANCIENT] Hittite marriage and family law
+[ANCIENT] Babylonian debt and interest laws
