@@ -284,3 +284,4 @@
 [ANCIENT] Sumerian land ownership laws
 [ANCIENT] Ancient Roman adoption laws
 [ANCIENT] Ancient Chinese law of the Han dynasty
+[ANCIENT] Ancient Persian royal decrees and justice
