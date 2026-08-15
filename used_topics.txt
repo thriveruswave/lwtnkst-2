@@ -281,3 +281,4 @@
 [ANCIENT] The Laws of Manu on property and inheritance
 [ANCIENT] Ancient Egyptian temple law and priestly rules
 [ANCIENT] Ancient Greek law courts of Athens
+[ANCIENT] Sumerian land ownership laws
