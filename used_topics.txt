@@ -286,3 +286,4 @@
 [ANCIENT] Ancient Chinese law of the Han dynasty
 [ANCIENT] Ancient Persian royal decrees and justice
 [ANCIENT] Ancient Celtic property and cattle laws
+[ANCIENT] Ancient Japanese clan laws and rituals
