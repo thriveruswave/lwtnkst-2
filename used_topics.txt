@@ -291,3 +291,4 @@
 [ANCIENT] Ancient Roman banking and money lending
 [ANCIENT] Ancient Indian royal law and governance
 [ANCIENT] Ancient Greek trial by jury
+[ANCIENT] Ancient Egyptian punishment and justice
