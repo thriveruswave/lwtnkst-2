@@ -292,3 +292,4 @@
 [ANCIENT] Ancient Indian royal law and governance
 [ANCIENT] Ancient Greek trial by jury
 [ANCIENT] Ancient Egyptian punishment and justice
+[ANCIENT] Ancient Babylonian inheritance law
