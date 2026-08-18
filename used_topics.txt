@@ -298,3 +298,4 @@
 [ANCIENT] Ancient Persian tax laws
 [ANCIENT] Ancient Spartan land and property laws
 [ANCIENT] Ancient Maya family law
+[ANCIENT] Ancient Greek law on homicide
