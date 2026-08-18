@@ -295,3 +295,4 @@
 [ANCIENT] Ancient Babylonian inheritance law
 [ANCIENT] Ancient Roman law on slavery
 [ANCIENT] Ancient Chinese Confucian legal values
+[ANCIENT] Ancient Persian tax laws
