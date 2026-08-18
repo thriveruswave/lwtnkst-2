@@ -296,3 +296,4 @@
 [ANCIENT] Ancient Roman law on slavery
 [ANCIENT] Ancient Chinese Confucian legal values
 [ANCIENT] Ancient Persian tax laws
+[ANCIENT] Ancient Spartan land and property laws
