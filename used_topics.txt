@@ -299,3 +299,4 @@
 [ANCIENT] Ancient Spartan land and property laws
 [ANCIENT] Ancient Maya family law
 [ANCIENT] Ancient Greek law on homicide
+[ANCIENT] Hittite laws on theft
