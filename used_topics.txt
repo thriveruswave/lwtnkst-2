@@ -305,3 +305,4 @@
 [ANCIENT] Ancient Sumerian debt slavery
 [ANCIENT] Ancient Roman military law
 [ANCIENT] Ancient Indian caste and legal duties
+[ANCIENT] Ancient Greek trade laws of the agora
