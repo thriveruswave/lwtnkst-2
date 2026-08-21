@@ -308,3 +308,4 @@
 [ANCIENT] Ancient Greek trade laws of the agora
 [ANCIENT] Ancient Chinese law on property
 [ANCIENT] Ancient Persian judicial procedures
+[ANCIENT] Ancient Spartan education laws
