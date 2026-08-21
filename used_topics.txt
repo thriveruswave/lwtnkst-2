@@ -309,3 +309,4 @@
 [ANCIENT] Ancient Chinese law on property
 [ANCIENT] Ancient Persian judicial procedures
 [ANCIENT] Ancient Spartan education laws
+[ANCIENT] Ancient Egyptian contract law
