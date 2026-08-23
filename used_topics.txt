@@ -321,3 +321,4 @@
 [ANCIENT] Ancient Egyptian land taxation
 [ANCIENT] Ancient Sumerian flood and irrigation laws
 [ANCIENT] Ancient Roman legal codes and jurists
+[ANCIENT] Ancient Spartan law and the Gerousia
