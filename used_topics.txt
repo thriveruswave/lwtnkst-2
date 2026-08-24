@@ -323,3 +323,4 @@
 [ANCIENT] Ancient Roman legal codes and jurists
 [ANCIENT] Ancient Spartan law and the Gerousia
 [ANCIENT] Ancient Maya criminal law
+[ANCIENT] Ancient Greek law on slavery
