@@ -57,6 +57,7 @@ jobs:
         python main.py
 
     - name: Verify and commit updated topics
+      continue-on-error: true
       run: |
         echo "📊 Checking topic file changes..."
         
@@ -97,6 +98,7 @@ jobs:
         fi
 
     - name: Upload to all platforms
+      if: always()
       env:
         # YouTube
         YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
